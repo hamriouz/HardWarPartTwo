@@ -28,7 +28,7 @@ public class SAp implements BranchPredictor {
 
         // Initializing the PAPHT with BranchInstructionSize as PHT Selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PAPHT = PerAddressPredictionHistoryTable(this.branchInstructionSize, (int) Math.pow(2, BHRSize), 2);
+        PAPHT = new PerAddressPredictionHistoryTable(this.branchInstructionSize, (int) Math.pow(2, BHRSize), 2);
 
         // Initialize the SC register
         SC = new SIPORegister("scSAp", SCSize, null);
