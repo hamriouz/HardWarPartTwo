@@ -38,7 +38,7 @@ public class GAs implements BranchPredictor {
 
         // Initializing the PSPHT with K bit as PHT selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PSPHT = null;
+        PSPHT = new PerAddressPredictionHistoryTable(KSize, (int) Math.pow(2, BHRSize), 2);
 
         // Initialize the saturating counter
         SC = new SIPORegister("scGAs", SCSize, null);
@@ -54,7 +54,8 @@ public class GAs implements BranchPredictor {
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO: complete Task 1
-        return BranchResult.NOT_TAKEN;
+        Bit[] prediction = this.PSPHT.setDefault(this.getCacheEntry(branchInstruction.getInstructionAddress()), getDefaultBlock());
+        return BranchResult.of(prediction[0].getValue());
     }
 
     /**
@@ -66,6 +67,9 @@ public class GAs implements BranchPredictor {
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
         // TODO: complete Task 2
+        Bit[] prediction = this.PSPHT.get(this.getCacheEntry(branchInstruction.getInstructionAddress()));
+        this.PSPHT.put(this.getCacheEntry(branchInstruction.getInstructionAddress()), CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
+        this.BHR.insert(Bit.of(BranchResult.isTaken(actual)));
     }
 
     /**
