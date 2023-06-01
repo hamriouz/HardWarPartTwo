@@ -20,30 +20,46 @@ public class SAs implements BranchPredictor {
 
     public SAs(int BHRSize, int SCSize, int branchInstructionSize, int KSize, HashMode hashMode) {
         // TODO: complete the constructor
-        this.branchInstructionSize = 0;
-        this.KSize = 0;
-        this.hashMode = HashMode.XOR;
+        this.branchInstructionSize = branchInstructionSize;
+        this.KSize = KSize;
+        this.hashMode = hashMode;
 
         // Initialize the PSBHR with the given bhr and branch instruction size
-        PSBHR = null;
+        PSBHR = new RegisterBank(this.KSize, BHRSize);
 
         // Initializing the PAPHT with BranchInstructionSize as PHT Selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PSPHT = null;
+        PSPHT = new PerAddressPredictionHistoryTable(this.KSize, (int)Math.pow(2, BHRSize), SCSize);
 
         // Initialize the SC register
-        SC = null;
+        SC = new SIPORegister("sc", SCSize, null);
+
     }
 
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO: complete Task 1
-        return BranchResult.NOT_TAKEN;
+        Bit[] address_PSBHR = getAddressLine(branchInstruction.getInstructionAddress());
+        ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
+        Bit[] history = shiftRegister_content_PSBHR.read();
+        Bit[] prediction = PSPHT.setDefault(address_PSBHR, getDefaultBlock());
+        return BranchResult.of(prediction[0].getValue());
+
     }
 
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
         // TODO: complete Task 2
+        Bit[] address_PSBHR = getAddressLine(branchInstruction.getInstructionAddress());
+        ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
+        Bit[] history = shiftRegister_content_PSBHR.read();
+
+        Bit[] cacheEntry = getCacheEntry(address_PSBHR, history);
+        Bit[] prediction = PSPHT.setDefault(cacheEntry, getDefaultBlock());
+
+        PSPHT.put(address_PSBHR, CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
+        shiftRegister_content_PSBHR.insert(Bit.of(BranchResult.isTaken(actual)));
+        PSBHR.write(branchInstruction.getInstructionAddress(), shiftRegister_content_PSBHR.read());
     }
 
 
