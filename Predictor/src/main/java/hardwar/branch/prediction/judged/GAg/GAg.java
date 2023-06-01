@@ -23,13 +23,13 @@ public class GAg implements BranchPredictor {
     public GAg(int BHRSize, int SCSize) {
         // TODO : complete the constructor
         // Initialize the BHR register with the given size and no default value
-        this.BHR = null;
+        this.BHR = new SIPORegister("kabe", BHRSize, null);
 
         // Initialize the PHT with a size of 2^size and each entry having a saturating counter of size "SCSize"
-        PHT = null;
+        PHT = new PerAddressPredictionHistoryTable(0, (int) Math.pow(2, BHRSize), 2);
 
         // Initialize the SC register
-        SC = null;
+        SC = new SIPORegister("sc", SCSize, null);
     }
 
     /**
@@ -41,7 +41,9 @@ public class GAg implements BranchPredictor {
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO : complete Task 1
-        return BranchResult.NOT_TAKEN;
+//        int pht_address = Bit.toNumber(this.BHR.read());
+        Bit[] prediction = this.PHT.get(this.BHR.read());
+        return BranchResult.of(prediction[0].getValue());
     }
 
     /**
@@ -53,6 +55,9 @@ public class GAg implements BranchPredictor {
     @Override
     public void update(BranchInstruction instruction, BranchResult actual) {
         // TODO: complete Task 2
+        Bit[] prediction = this.PHT.get(this.BHR.read());
+        this.PHT.put(this.BHR.read(), CombinationalLogic.count(prediction, true, CountMode.SATURATING));
+        this.BHR.insert(Bit.of(BranchResult.isTaken(actual)));
     }
 
 
