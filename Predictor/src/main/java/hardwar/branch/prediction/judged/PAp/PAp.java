@@ -1,7 +1,6 @@
 package hardwar.branch.prediction.judged.PAp;
 
 
-import com.sun.tools.javac.util.ArrayUtils;
 import hardwar.branch.prediction.shared.*;
 import hardwar.branch.prediction.shared.devices.*;
 
@@ -30,7 +29,7 @@ public class PAp implements BranchPredictor {
 
         // Initializing the PAPHT with BranchInstructionSize as PHT Selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PAPHT = new PerAddressPredictionHistoryTable(branchInstructionSize, Math.pow(2, BHRSize), SCSize);
+        PAPHT = new PerAddressPredictionHistoryTable(branchInstructionSize, (int)Math.pow(2, BHRSize), SCSize);
 
         // Initialize the SC register
         SC = new SIPORegister("sc", SCSize, null);
@@ -40,7 +39,7 @@ public class PAp implements BranchPredictor {
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO: complete Task 1
         ShiftRegister usedBHR = PABHR.read(branchInstruction.getInstructionAddress());
-        Bit[] addressKey = ArrayUtils.addAll(branchInstruction.getInstructionAddress(), usedBHR.read());
+        Bit[] addressKey = getCacheEntry(branchInstruction.getInstructionAddress(), usedBHR.read());
         Bit[] prediction = PAPHT.setDefault(addressKey, getDefaultBlock());
         return BranchResult.of(prediction[0].getValue());
     }
@@ -50,7 +49,7 @@ public class PAp implements BranchPredictor {
         // TODO:complete Task 2
         ShiftRegister usedBHR = PABHR.read(instruction.getInstructionAddress());
 
-        Bit[] addressKey = ArrayUtils.addAll(branchInstruction.getInstructionAddress(), usedBHR.read());
+        Bit[] addressKey = getCacheEntry(instruction.getInstructionAddress(), usedBHR.read());
         Bit[] prediction = PAPHT.setDefault(addressKey, getDefaultBlock());
         PAPHT.put(addressKey, CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
         usedBHR.insert(Bit.of(BranchResult.isTaken(actual)));
