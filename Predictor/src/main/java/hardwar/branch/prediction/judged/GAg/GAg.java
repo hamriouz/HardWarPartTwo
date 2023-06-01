@@ -62,6 +62,7 @@ public class GAg implements BranchPredictor {
 
 
     /**
+     *
      * @return a zero series of bits as default value of cache block
      */
     private Bit[] getDefaultBlock() {
