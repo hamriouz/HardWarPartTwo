@@ -39,10 +39,12 @@ public class SAs implements BranchPredictor {
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO: complete Task 1
-        Bit[] address_PSBHR = getAddressLine(branchInstruction.getInstructionAddress());
+        Bit[] address_PSBHR = hash(branchInstruction.getInstructionAddress());
         ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
         Bit[] history = shiftRegister_content_PSBHR.read();
-        Bit[] prediction = PSPHT.setDefault(address_PSBHR, getDefaultBlock());
+        Bit[] address = getCacheEntry(address_PSBHR, history);
+        Bit[] prediction = PSPHT.setDefault(address, getDefaultBlock());
+
         return BranchResult.of(prediction[0].getValue());
 
     }
@@ -53,13 +55,11 @@ public class SAs implements BranchPredictor {
         Bit[] address_PSBHR = getAddressLine(branchInstruction.getInstructionAddress());
         ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
         Bit[] history = shiftRegister_content_PSBHR.read();
+        Bit[] address = getCacheEntry(address_PSBHR, history);
+        Bit[] prediction = PSPHT.setDefault(address, getDefaultBlock());
 
-        Bit[] cacheEntry = getCacheEntry(address_PSBHR, history);
-        Bit[] prediction = PSPHT.setDefault(cacheEntry, getDefaultBlock());
-
-        PSPHT.put(address_PSBHR, CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
-        shiftRegister_content_PSBHR.insert(Bit.of(BranchResult.isTaken(actual)));
-        PSBHR.write(branchInstruction.getInstructionAddress(), shiftRegister_content_PSBHR.read());
+        PSPHT.put(address, CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
+        this.PSBHR.write(address_PSBHR, shiftRegister_content_PSBHR.read());
     }
 
 
@@ -69,10 +69,14 @@ public class SAs implements BranchPredictor {
     }
 
     private Bit[] getCacheEntry(Bit[] branchAddress, Bit[] BHRValue) {
-        // Concatenate the branch address bits with the BHR bits
-        Bit[] cacheEntry = new Bit[branchAddress.length + BHRValue.length];
-        System.arraycopy(branchAddress, 0, cacheEntry, 0, KSize);
-        System.arraycopy(BHRValue, 0, cacheEntry, branchAddress.length, BHRValue.length);
+        // hash the branch address
+        Bit[] hashKSize = CombinationalLogic.hash(branchAddress, KSize, hashMode);
+
+        // Concatenate the Hash bits with the BHR bits
+        Bit[] cacheEntry = new Bit[hashKSize.length + BHRValue.length];
+        System.arraycopy(hashKSize, 0, cacheEntry, 0, hashKSize.length);
+        System.arraycopy(BHRValue, 0, cacheEntry, hashKSize.length, BHRValue.length);
+
         return cacheEntry;
     }
 
