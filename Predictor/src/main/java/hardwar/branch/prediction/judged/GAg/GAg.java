@@ -42,8 +42,7 @@ public class GAg implements BranchPredictor {
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO : complete Task 1
 //        int pht_address = Bit.toNumber(this.BHR.read());
-        Bit[] default_value = {Bit.ZERO, Bit.ZERO};
-        Bit[] prediction = this.PHT.setDefault(this.BHR.read(), default_value);
+        Bit[] prediction = this.PHT.setDefault(this.BHR.read(), getDefaultBlock());
         return BranchResult.of(prediction[0].getValue());
     }
 
