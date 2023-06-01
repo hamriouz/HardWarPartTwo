@@ -39,7 +39,7 @@ public class SAs implements BranchPredictor {
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO: complete Task 1
-        Bit[] address_PSBHR = hash(branchInstruction.getInstructionAddress());
+        Bit[] address_PSBHR = getAddressLine(branchInstruction.getInstructionAddress());
         ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
         Bit[] history = shiftRegister_content_PSBHR.read();
         Bit[] address = getCacheEntry(address_PSBHR, history);
