@@ -46,13 +46,14 @@ public class SAg implements BranchPredictor {
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
         // TODO: complete Task 2
-        Bit[] address_PSBHR = hash(branchInstruction.getInstructionAddress());
+        Bit[] address_PSBHR = getRBAddressLine(branchInstruction.getInstructionAddress());
         ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
         Bit[] history = shiftRegister_content_PSBHR.read();
         Bit[] prediction = this.PHT.setDefault(history, getDefaultBlock());
 
         this.PHT.put(history, CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
         shiftRegister_content_PSBHR.insert(Bit.of(BranchResult.isTaken(actual)));
+        this.PSBHR.write(address_PSBHR, shiftRegister_content_PSBHR.read());
 
 //
 //        this.PAPHT.put(address, CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
