@@ -1,6 +1,7 @@
 package hardwar.branch.prediction.judged.SAg;
 
 
+
 import hardwar.branch.prediction.shared.*;
 import hardwar.branch.prediction.shared.devices.*;
 
@@ -19,28 +20,43 @@ public class SAg implements BranchPredictor {
 
     public SAg(int BHRSize, int SCSize, int branchInstructionSize, int KSize) {
         // TODO: complete the constructor
-        this.branchInstructionSize = 0;
-        this.KSize = 0;
+        this.branchInstructionSize = branchInstructionSize;
+        this.KSize = KSize;
 
         // Initialize the PABHR with the given bhr and Ksize
-        PSBHR = null;
+        PSBHR = new RegisterBank(this.KSize, BHRSize);
 
         // Initialize the PHT with a size of 2^size and each entry having a saturating counter of size "SCSize"
-        PHT = null;
+        PHT = new PageHistoryTable((int) Math.pow(2, BHRSize), 2);
 
         // Initialize the SC register
-        SC = null;
+        SC = new SIPORegister("sc-forus", SCSize, null);
     }
 
     @Override
     public BranchResult predict(BranchInstruction instruction) {
         // TODO: complete Task 1
-        return BranchResult.NOT_TAKEN;
+        Bit[] address_PSBHR = hash(instruction.getInstructionAddress());
+        ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
+        Bit[] history = shiftRegister_content_PSBHR.read();
+        Bit[] prediction = this.PHT.setDefault(history, getDefaultBlock());
+        return BranchResult.of(prediction[0].getValue());
     }
 
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
         // TODO: complete Task 2
+        Bit[] address_PSBHR = hash(branchInstruction.getInstructionAddress());
+        ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
+        Bit[] history = shiftRegister_content_PSBHR.read();
+        Bit[] prediction = this.PHT.setDefault(history, getDefaultBlock());
+
+        this.PHT.put(history, CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
+        shiftRegister_content_PSBHR.insert(Bit.of(BranchResult.isTaken(actual)));
+
+//
+//        this.PAPHT.put(address, CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
+//        this.BHR.insert(Bit.of(BranchResult.isTaken(actual)));
     }
 
     private Bit[] getRBAddressLine(Bit[] branchAddress) {
