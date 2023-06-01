@@ -28,7 +28,7 @@ public class SAp implements BranchPredictor {
 
         // Initializing the PAPHT with BranchInstructionSize as PHT Selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PAPHT = new PerAddressPredictionHistoryTable(this.branchInstructionSize, (int) Math.pow(2, BHRSize), 2);
+        PAPHT = new PerAddressPredictionHistoryTable(this.branchInstructionSize, (int) Math.pow(2, BHRSize), SCSize);
 
         // Initialize the SC register
         SC = new SIPORegister("scSAp", SCSize, null);
@@ -38,9 +38,10 @@ public class SAp implements BranchPredictor {
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO: complete Task 1
 
-        Bit[] address_PSBHR = hash(branchInstruction.getInstructionAddress());
+        Bit[] address_PSBHR = getRBAddressLine(branchInstruction.getInstructionAddress());
         ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
         Bit[] history = shiftRegister_content_PSBHR.read();
+
         Bit[] address = getCacheEntry(branchInstruction.getInstructionAddress(), history);
         Bit[] prediction = this.PAPHT.setDefault(address, getDefaultBlock());
 
@@ -50,7 +51,7 @@ public class SAp implements BranchPredictor {
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
 
-        Bit[] address_PSBHR = hash(branchInstruction.getInstructionAddress());
+        Bit[] address_PSBHR = getRBAddressLine(branchInstruction.getInstructionAddress());
         ShiftRegister shiftRegister_content_PSBHR = this.PSBHR.read(address_PSBHR);
         Bit[] history = shiftRegister_content_PSBHR.read();
         Bit[] address = getCacheEntry(branchInstruction.getInstructionAddress(), history);
