@@ -57,6 +57,7 @@ public class PAg implements BranchPredictor {
         Bit[] prediction = this.PHT.setDefault(usedBHR.read(), getDefaultBlock());
         this.PHT.put(usedBHR.read(), CombinationalLogic.count(prediction, BranchResult.isTaken(actual), CountMode.SATURATING));
         usedBHR.insert(Bit.of(BranchResult.isTaken(actual)));
+        PABHR.write(instruction.getInstructionAddress(), usedBHR.read());
     }
 
     /**
